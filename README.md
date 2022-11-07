@@ -19,3 +19,8 @@ The decision to create our own implementation of a tool will depend on:
 - how generally useful is the tool?
 - how simple is the tool to implement?
 - how easy is it to build an external implementation from source and how many targets can it support?
+
+# TODO:
+
+- better SSL support in iguana
+- a tar tool
