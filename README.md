@@ -20,6 +20,10 @@ The decision to create our own implementation of a tool will depend on:
 - how simple is the tool to implement?
 - how easy is it to build an external implementation from source and how many targets can it support?
 
+# Test Case
+
+I should be able to create a linux distribution that only has the Zig toolchain, this repository and a network connection and be able to build any project from source (without having to download any prebuilt binaries).
+
 # TODO:
 
 - better SSL support in iguana
