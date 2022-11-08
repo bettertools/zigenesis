@@ -80,12 +80,21 @@ fn parseFilename(filename: [:0]const u8) ParseFilename {
 fn extractFile(filename: [:0]const u8) !void {
     const filename_info = parseFilename(filename);
 
-    var file = std.fs.cwd().openFile(filename, .{});
+    var file = std.fs.cwd().openFile(filename, .{}) catch |err|
+        fatal("failed to open archive '{s}' with {s}", .{filename, @errorName(err)});
     defer file.close();
 
     switch (filename_info.kind) {
         .tar_gz => {
-            fatal("TODO: extract '{s}'", .{filename});
+            const mem = try std.os.mmap(null, try file.getEndPos(),
+                std.os.PROT.READ, std.os.MAP.PRIVATE, file.handle, 0);
+            defer std.os.munmap(mem);
+            var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+            defer arena.deinit();
+            var fbs = std.io.FixedBufferStream([]const u8){ .buffer = mem, .pos = 0 };
+            var stream = try std.compress.gzip.gzipStream(arena.allocator(), fbs.reader());
+            defer stream.deinit();
+            try instantiate(arena.allocator(), std.fs.cwd(), stream.reader(), 0);
         },
     }
 }

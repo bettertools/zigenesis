@@ -113,7 +113,7 @@ fn make(step: *std.build.Step) !void {
 
     var args = std.ArrayList([]const u8).init(self.b.allocator);
     defer args.deinit();
-    const use_system_tar = true;
+    const use_system_tar = false;
     if (use_system_tar) {
         std.log.warn("using the system tar executable instead of our own", .{});
         try args.append("tar");
