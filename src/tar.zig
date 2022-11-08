@@ -6,16 +6,88 @@ const common = @import("common.zig");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
 
-fn oom(e: error{OutOfMemory}) noreturn {
-    @panic(@tagName(e));
+const oom = common.oom;
+const fatal = common.fatal;
+
+pub fn main() !u8 {
+    const all_args = common.cmdlineArgs();
+
+    var sw = struct {
+        extract: bool = false,
+        filename: bool = false,
+    }{ };
+
+    const args = blk: {
+        var non_option_len: usize = 0;
+        for (all_args) |arg_ptr| {
+            const arg = std.mem.span(arg_ptr);
+            if (!std.mem.startsWith(u8, arg, "-")) {
+                all_args[non_option_len] = arg;
+                non_option_len += 1;
+            } else if (!std.mem.startsWith(u8, arg, "--")) {
+                if (arg.len == 1) {
+                    common.fatal("unknown cmdline option '-'", .{});
+                }
+                for (arg[1..]) |c| {
+                    switch (c) {
+                        'x' => sw.extract = true,
+                        'f' => sw.filename = true,
+                        else => {
+                            common.fatal("unknown cmdline switch '-{c}'", .{c});
+                        },
+                    }
+                }
+            } else {
+                common.fatal("unknown cmdline option '{s}'", .{arg});
+            }
+        }
+        break :blk all_args[0 .. non_option_len];
+    };
+
+    if (sw.extract) {
+        if (sw.filename) {
+            if (args.len == 0) fatal("option '-f' requires a filename", .{});
+            for (args) |arg| {
+                try extractFile(std.mem.span(arg));
+            }
+            return 0;
+        } else {
+            fatal("todo: extract from stdin", .{});
+        }
+    } else {
+        fatal("non extract mode (-x) not implemented", .{});
+    }
 }
 
-pub fn main() !void {
-    const args = common.cmdlineArgs();
-    for (args) |arg| {
-        std.log.info("cmdline arg '{s}'", .{arg});
+const ArchiveKind = enum {
+    tar_gz,
+};
+const ParseFilename = struct {
+    name_len: usize,
+    kind: ArchiveKind,
+};
+fn parseFilename(filename: [:0]const u8) ParseFilename {
+    const tar_gz = ".tar.gz";
+    if (std.mem.endsWith(u8, filename, tar_gz)) {
+        return .{
+            .name_len = filename.len - tar_gz.len,
+            .kind = .tar_gz,
+        };
     }
-    return error.NotImpl;
+    std.debug.panic("TODO: parseFilename does not handle '{s}' yet", .{filename});
+}
+
+fn extractFile(filename: [:0]const u8) !void {
+    const filename_info = parseFilename(filename);
+
+    var file = std.fs.cwd().openFile(filename, .{});
+    defer file.close();
+
+    switch (filename_info.kind) {
+        .tar_gz => {
+            fatal("TODO: extract '{s}'", .{filename});
+        },
+    }
 }
 
 // ustar tar implementation

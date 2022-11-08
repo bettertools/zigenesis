@@ -15,7 +15,7 @@ pub fn create(artifact: *LibExeObjStep) *InstallNativeArtifactStep {
     if (artifact.kind != .exe) {
         @panic("non exe native artifact not implemented");
     }
-    
+
     const b = artifact.builder;
     const self = b.allocator.create(InstallNativeArtifactStep) catch unreachable;
     self.* = InstallNativeArtifactStep{
@@ -32,12 +32,17 @@ pub fn create(artifact: *LibExeObjStep) *InstallNativeArtifactStep {
             }
         } else false,
     };
-    self.step.dependOn(&artifact.step);
+    // we call make inside our make instead I guess? Is this right?
+    //self.step.dependOn(&artifact.step);
     return self;
 }
 
 fn make(step: *Step) !void {
     const self = @fieldParentPtr(InstallNativeArtifactStep, "step", step);
+
+    // TODO: is this the right place to call this?
+    try self.artifact.step.make();
+
     const b = self.artifact.builder;
 
     {
@@ -47,7 +52,7 @@ fn make(step: *Step) !void {
             else => |e| return e,
         };
     }
-    
+
     try b.updateFile(self.artifact.getOutputSource().getPath(b), self.installed_path);
     if (self.artifact.isDynamicLibrary() and self.artifact.version != null and self.artifact.target.wantSharedLibSymLinks()) {
         @panic("not impl");

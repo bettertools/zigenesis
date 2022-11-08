@@ -5,6 +5,7 @@ const FetchStep = @This();
 step: std.build.Step,
 b: *std.build.Builder,
 ziget_native: *InstallNativeArtifactStep,
+tar_native: *InstallNativeArtifactStep,
 url: []const u8,
 name: []const u8,
 archive_path: []const u8,
@@ -26,9 +27,14 @@ fn parseArchive(name: []const u8) ParsedArchiveName {
     std.debug.panic("TODO: unhandled archive extension '{s}'", .{name});
 }
 
-pub fn create(b: *std.build.Builder, ziget_native: *InstallNativeArtifactStep, opt: struct {
-    url: []const u8,
-}) *FetchStep {
+pub fn create(
+    b: *std.build.Builder,
+    ziget_native: *InstallNativeArtifactStep,
+    tar_native: *InstallNativeArtifactStep,
+    opt: struct {
+        url: []const u8,
+    },
+) *FetchStep {
     var result = b.allocator.create(FetchStep) catch @panic("OutOfMemory");
     const basename = std.fs.path.basename(opt.url);
     const archive_info = parseArchive(basename);
@@ -40,6 +46,7 @@ pub fn create(b: *std.build.Builder, ziget_native: *InstallNativeArtifactStep, o
         .url = opt.url,
         .name = name,
         .ziget_native = ziget_native,
+        .tar_native = tar_native,
         .archive_path = archive_path,
         .extracted_path = b.pathJoin(&.{ b.build_root, "dep", name }),
         .archive_kind = archive_info.kind,
@@ -106,11 +113,16 @@ fn make(step: *std.build.Step) !void {
 
     var args = std.ArrayList([]const u8).init(self.b.allocator);
     defer args.deinit();
-    std.log.warn("using the native tar executable instead of our own", .{});
-    // TODO: should every single fetch call make like this?
-    //try self.tar_native.exe.step.make();
-    try args.append("tar");
-    try args.append("xf");
+    const use_system_tar = true;
+    if (use_system_tar) {
+        std.log.warn("using the system tar executable instead of our own", .{});
+        try args.append("tar");
+    } else {
+        // TODO: should every single fetch call make like this?
+        try self.tar_native.step.make();
+        try args.append(self.tar_native.installed_path);
+    }
+    try args.append("-xf");
     try args.append(self.archive_path);
     try run(self.b, args.items, .{
         .cwd = tmp_path,
@@ -164,11 +176,11 @@ fn run(builder: *std.build.Builder, argv: []const []const u8, opt: struct { cwd:
     const result = try child.wait();
     switch (result) {
         .Exited => |code| if (code != 0) {
-            std.log.err("git clone failed with exit code {}", .{code});
+            std.log.err("{s} failed with exit code {}", .{std.fs.path.basename(argv[0]), code});
             std.os.exit(0xff);
         },
         else => {
-            std.log.err("git clone failed with: {}", .{result});
+            std.log.err("{s} failed with: {}", .{std.fs.path.basename(argv[0]), result});
             std.os.exit(0xff);
         },
     }

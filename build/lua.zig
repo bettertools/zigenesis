@@ -7,8 +7,9 @@ pub fn add(
     target: anytype,
     mode: anytype,
     ziget_native: *InstallNativeArtifactStep,
+    tar_native: *InstallNativeArtifactStep,
 ) *std.build.LibExeObjStep {
-    const fetch = FetchStep.create(b, ziget_native, .{
+    const fetch = FetchStep.create(b, ziget_native, tar_native, .{
         .url = "http://www.lua.org/ftp/lua-5.4.4.tar.gz",
     });
     const exe = b.addExecutable("lua", null);

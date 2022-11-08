@@ -46,7 +46,7 @@ pub fn build(b: *Builder) void {
         const update = UpdateZigetStep.create(b);
         b.step("update-ziget", "Update the ziget with master").dependOn(&update.step);
     }
-    _ = lua.add(b, target, mode, ziget_native);
+    _ = lua.add(b, target, mode, ziget_native, tar_native);
 }
 
 const UpdateZigetStep = struct {
