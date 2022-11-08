@@ -132,16 +132,17 @@ fn make(step: *std.build.Step) !void {
     {
         const tmp_sub_path = self.b.pathJoin(&.{tmp_path, self.name});
         defer self.b.allocator.free(tmp_sub_path);
-
-        var sub_dir = try std.fs.cwd().openIterableDir(tmp_sub_path, .{});
-        defer sub_dir.close();
-        var it = sub_dir.iterate();
-        while (try it.next()) |entry| {
-            var src = self.b.pathJoin(&.{tmp_sub_path, entry.name});
-            defer self.b.allocator.free(src);
-            var dst = self.b.pathJoin(&.{tmp_path, entry.name});
-            defer self.b.allocator.free(dst);
-            try std.os.rename(src, dst);
+        {
+            var sub_dir = try std.fs.cwd().openIterableDir(tmp_sub_path, .{});
+            defer sub_dir.close();
+            var it = sub_dir.iterate();
+            while (try it.next()) |entry| {
+                var src = self.b.pathJoin(&.{tmp_sub_path, entry.name});
+                defer self.b.allocator.free(src);
+                var dst = self.b.pathJoin(&.{tmp_path, entry.name});
+                defer self.b.allocator.free(dst);
+                try std.os.rename(src, dst);
+            }
         }
         try std.fs.cwd().deleteDir(tmp_sub_path);
     }

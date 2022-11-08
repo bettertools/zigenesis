@@ -64,8 +64,7 @@ fn make(step: *Step) !void {
         //try b.updateFile(self.artifact.getOutputLibSource().getPath(b), full_implib_path);
     }
     if (self.do_pdb) {
-        @panic("not impl");
-        //const full_pdb_path = b.getInstallPath(pdb_dir, self.artifact.out_pdb_filename);
-        //try b.updateFile(self.artifact.getOutputPdbSource().getPath(b), full_pdb_path);
+        const full_pdb_path = b.pathJoin(&.{ b.build_root, "native-out", self.artifact.out_pdb_filename });
+        try b.updateFile(self.artifact.getOutputPdbSource().getPath(b), full_pdb_path);
     }
 }

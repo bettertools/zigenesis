@@ -86,11 +86,17 @@ fn extractFile(filename: [:0]const u8) !void {
 
     switch (filename_info.kind) {
         .tar_gz => {
-            const mem = try std.os.mmap(null, try file.getEndPos(),
-                std.os.PROT.READ, std.os.MAP.PRIVATE, file.handle, 0);
-            defer std.os.munmap(mem);
             var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
             defer arena.deinit();
+            const mem = blk: {
+                // TODO: windows also supports a MemoryMap API, it might be faster than reading the file into memory
+                if (builtin.os.tag == .windows)
+                    break :blk try file.readToEndAlloc(arena.allocator(), std.math.maxInt(usize));
+                break :blk try std.os.mmap(
+                    null, try file.getEndPos(), std.os.PROT.READ,
+                    std.os.MAP.PRIVATE, file.handle, 0);
+            };
+            defer if (builtin.os.tag == .windows) { } else std.os.munmap(mem);
             var fbs = std.io.FixedBufferStream([]const u8){ .buffer = mem, .pos = 0 };
             var stream = try std.compress.gzip.gzipStream(arena.allocator(), fbs.reader());
             defer stream.deinit();
