@@ -1,10 +1,10 @@
 const std = @import("std");
+const InstallNativeArtifactStep = @import("InstallNativeArtifactStep.zig");
 const FetchStep = @This();
-const ZigetNative = @import("ZigetNative.zig");
 
 step: std.build.Step,
 b: *std.build.Builder,
-ziget_native: *ZigetNative,
+ziget_native: *InstallNativeArtifactStep,
 url: []const u8,
 name: []const u8,
 archive_path: []const u8,
@@ -26,7 +26,7 @@ fn parseArchive(name: []const u8) ParsedArchiveName {
     std.debug.panic("TODO: unhandled archive extension '{s}'", .{name});
 }
 
-pub fn create(b: *std.build.Builder, ziget_native: *ZigetNative, opt: struct {
+pub fn create(b: *std.build.Builder, ziget_native: *InstallNativeArtifactStep, opt: struct {
     url: []const u8,
 }) *FetchStep {
     var result = b.allocator.create(FetchStep) catch @panic("OutOfMemory");
@@ -35,7 +35,7 @@ pub fn create(b: *std.build.Builder, ziget_native: *ZigetNative, opt: struct {
     const archive_path = b.pathJoin(&.{ b.build_root, "download", basename });
     const name = basename[0 .. archive_info.name_len];
     result.* = FetchStep{
-        .step = std.build.Step.init(.custom, "fetch", b.allocator, make),
+        .step = std.build.Step.init(.custom, b.fmt("fetch {s}", .{opt.url}), b.allocator, make),
         .b = b,
         .url = opt.url,
         .name = name,
@@ -69,8 +69,8 @@ fn fetchArchive(self: FetchStep) !void {
     var args = std.ArrayList([]const u8).init(self.b.allocator);
     defer args.deinit();
     // TODO: should every single fetch call make like this?
-    try self.ziget_native.exe.step.make();
-    try args.append(self.ziget_native.exe.getOutputSource().getPath(self.b));
+    try self.ziget_native.step.make();
+    try args.append(self.ziget_native.installed_path);
     try args.append("--out");
     try args.append(tmp_path);
     try args.append(self.url);

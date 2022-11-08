@@ -4,14 +4,43 @@ const Builder = std.build.Builder;
 const Step = std.build.Step;
 const Pkg = std.build.Pkg;
 
+const InstallNativeArtifactStep = @import("build/InstallNativeArtifactStep.zig");
 const GitRepoStep = @import("build/GitRepoStep.zig");
-const ZigetNative = @import("build/ZigetNative.zig");
 const lua = @import("build/lua.zig");
 
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
-    const ziget_native = ZigetNative.create(b);
+
+    const ziget_native = blk: {
+        const exe = b.addExecutable("ziget", "ziget/ziget-cmdline.zig");
+        exe.single_threaded = true;
+        exe.addPackage(Pkg{
+            .name = "ziget",
+            .source = .{ .path = "ziget/ziget.zig" },
+            .dependencies = &[_]Pkg {
+                Pkg{
+                    .name = "ssl",
+                    .source = .{ .path = "ziget/iguana/ssl.zig" },
+                    .dependencies = &[_]Pkg {
+                        Pkg{
+                            .name = "iguana",
+                            .source = .{ .path = "ziget/dep/iguanaTLS/src/main.zig" },
+                        },
+                    },
+                },
+            },
+        });
+        break :blk InstallNativeArtifactStep.create(exe);
+    };
+    b.step("ziget-native", "build ziget-native").dependOn(&ziget_native.step);
+
+    const tar_native = blk: {
+        const exe = b.addExecutable("tar", "src/tar.zig");
+        exe.single_threaded = true;
+        break :blk InstallNativeArtifactStep.create(exe);
+    };
+    b.step("tar-native", "build tar-native").dependOn(&tar_native.step);
 
     {
         const update = UpdateZigetStep.create(b);

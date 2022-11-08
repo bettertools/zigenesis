@@ -1,12 +1,12 @@
 const std = @import("std");
-const ZigetNative = @import("ZigetNative.zig");
+const InstallNativeArtifactStep = @import("InstallNativeArtifactStep.zig");
 const FetchStep = @import("FetchStep.zig");
 
 pub fn add(
     b: *std.build.Builder,
     target: anytype,
     mode: anytype,
-    ziget_native: *ZigetNative,
+    ziget_native: *InstallNativeArtifactStep,
 ) *std.build.LibExeObjStep {
     const fetch = FetchStep.create(b, ziget_native, .{
         .url = "http://www.lua.org/ftp/lua-5.4.4.tar.gz",
