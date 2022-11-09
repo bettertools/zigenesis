@@ -8,6 +8,7 @@ This repository aims to provide the code necessary to build any project written 
 - it supports cross-compilation without having to install extra pieces for each target
 - it can build static binaries out of the box
 - it is the smallest toolchain that supports these features
+- it has a path to bootstrap from C (for obscure platforms that only provide a C compiler)
 - it includes a build system
 
 Once a project can be built with Zig, it also means that project can be built for any target supported by Zig.
