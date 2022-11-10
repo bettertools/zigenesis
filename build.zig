@@ -7,6 +7,7 @@ const Pkg = std.build.Pkg;
 const InstallNativeArtifactStep = @import("build/InstallNativeArtifactStep.zig");
 const GitRepoStep = @import("build/GitRepoStep.zig");
 const lua = @import("build/lua.zig");
+const bash = @import("build/bash.zig");
 const python3 = @import("build/python3.zig");
 
 pub fn build(b: *Builder) void {
@@ -47,6 +48,13 @@ pub fn build(b: *Builder) void {
         break :blk InstallNativeArtifactStep.create(exe);
     };
     b.step("tar-native", "build tar-native").dependOn(&tar_native.step);
+
+    const bash_native = blk: {
+        const exe = bash.add(b, ziget_native, tar_native);
+        exe.setBuildMode(native_tool_mode);
+        break :blk InstallNativeArtifactStep.create(exe);
+    };
+    b.step("bash-native", "build bash-native").dependOn(&bash_native.step);
 
     const python3_native = blk: {
         const exe = python3.add(b, ziget_native, tar_native);

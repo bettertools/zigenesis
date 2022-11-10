@@ -26,6 +26,10 @@ The decision to create our own implementation of a tool will depend on:
 I should be able to create a linux distribution that only has the Zig toolchain, this repository and a network connection and be able to build any project from source (without having to download any prebuilt binaries).
 
 # TODO:
-
+- maybe a BASH implementation in Zig?
+    - BASH is used everywhere and I'm not sure how many platforms the GNU BASH
+      implementation supports, so, it may be worth it to implement our own to
+      support as many platforms as possible.
+- more compressed archive formats (i.e. `.bz1`, `.xz`)
 - better SSL support in iguana
-- a tar tool
+- enhance the tar tool (it may not support some of the variants in the wild)
