@@ -20,9 +20,15 @@ const ParsedArchiveName = struct {
     kind: ArchiveKind,
 };
 fn parseArchive(name: []const u8) ParsedArchiveName {
-    const tar_gz = ".tar.gz";
-    if (std.mem.endsWith(u8, name, tar_gz)) {
-        return .{ .name_len = name.len - tar_gz.len, .kind = .tar_gz };
+    {
+        const tar_gz = ".tar.gz";
+        if (std.mem.endsWith(u8, name, tar_gz))
+            return .{ .name_len = name.len - tar_gz.len, .kind = .tar_gz };
+    }
+    {
+        const tgz = ".tgz";
+        if (std.mem.endsWith(u8, name, tgz))
+            return .{ .name_len = name.len - tgz.len, .kind = .tar_gz };
     }
     std.debug.panic("TODO: unhandled archive extension '{s}'", .{name});
 }
@@ -52,6 +58,11 @@ pub fn create(
         .archive_kind = archive_info.kind,
     };
 
+    // TODO: maybe it's overkill to have every single FetchStep depend
+    //       on ziget_native/tar_native?
+    result.step.dependOn(&ziget_native.step);
+    result.step.dependOn(&tar_native.step);
+
     return result;
 }
 
@@ -76,7 +87,7 @@ fn fetchArchive(self: FetchStep) !void {
     var args = std.ArrayList([]const u8).init(self.b.allocator);
     defer args.deinit();
     // TODO: should every single fetch call make like this?
-    try self.ziget_native.step.make();
+    //try self.ziget_native.step.make();
     try args.append(self.ziget_native.installed_path);
     try args.append("--out");
     try args.append(tmp_path);
@@ -119,7 +130,7 @@ fn make(step: *std.build.Step) !void {
         try args.append("tar");
     } else {
         // TODO: should every single fetch call make like this?
-        try self.tar_native.step.make();
+        //try self.tar_native.step.make();
         try args.append(self.tar_native.installed_path);
     }
     try args.append("-xf");

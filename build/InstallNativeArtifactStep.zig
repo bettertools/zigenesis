@@ -32,17 +32,12 @@ pub fn create(artifact: *LibExeObjStep) *InstallNativeArtifactStep {
             }
         } else false,
     };
-    // we call make inside our make instead I guess? Is this right?
-    //self.step.dependOn(&artifact.step);
+    self.step.dependOn(&artifact.step);
     return self;
 }
 
 fn make(step: *Step) !void {
     const self = @fieldParentPtr(InstallNativeArtifactStep, "step", step);
-
-    // TODO: is this the right place to call this?
-    try self.artifact.step.make();
-
     const b = self.artifact.builder;
 
     {

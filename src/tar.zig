@@ -67,10 +67,17 @@ const ParseFilename = struct {
     kind: ArchiveKind,
 };
 fn parseFilename(filename: [:0]const u8) ParseFilename {
-    const tar_gz = ".tar.gz";
-    if (std.mem.endsWith(u8, filename, tar_gz)) {
-        return .{
+    {
+        const tar_gz = ".tar.gz";
+        if (std.mem.endsWith(u8, filename, tar_gz)) return .{
             .name_len = filename.len - tar_gz.len,
+            .kind = .tar_gz,
+        };
+    }
+    {
+        const tgz = ".tgz";
+        if (std.mem.endsWith(u8, filename, tgz)) return .{
+            .name_len = filename.len - tgz.len,
             .kind = .tar_gz,
         };
     }

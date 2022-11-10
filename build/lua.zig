@@ -4,8 +4,8 @@ const FetchStep = @import("FetchStep.zig");
 
 pub fn add(
     b: *std.build.Builder,
-    target: anytype,
-    mode: anytype,
+    target: std.zig.CrossTarget,
+    mode: std.builtin.Mode,
     ziget_native: *InstallNativeArtifactStep,
     tar_native: *InstallNativeArtifactStep,
 ) *std.build.LibExeObjStep {

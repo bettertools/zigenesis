@@ -7,13 +7,18 @@ const Pkg = std.build.Pkg;
 const InstallNativeArtifactStep = @import("build/InstallNativeArtifactStep.zig");
 const GitRepoStep = @import("build/GitRepoStep.zig");
 const lua = @import("build/lua.zig");
+const python3 = @import("build/python3.zig");
 
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
+    // TODO: maybe expose this as an option
+    const native_tool_mode = std.builtin.Mode.Debug;
+
     const ziget_native = blk: {
         const exe = b.addExecutable("ziget", "ziget/ziget-cmdline.zig");
+        exe.setBuildMode(native_tool_mode);
         exe.single_threaded = true;
         exe.addPackage(Pkg{
             .name = "ziget",
@@ -37,10 +42,18 @@ pub fn build(b: *Builder) void {
 
     const tar_native = blk: {
         const exe = b.addExecutable("tar", "src/tar.zig");
+        exe.setBuildMode(native_tool_mode);
         exe.single_threaded = true;
         break :blk InstallNativeArtifactStep.create(exe);
     };
     b.step("tar-native", "build tar-native").dependOn(&tar_native.step);
+
+    const python3_native = blk: {
+        const exe = python3.add(b, ziget_native, tar_native);
+        exe.setBuildMode(native_tool_mode);
+        break :blk InstallNativeArtifactStep.create(exe);
+    };
+    b.step("python3-native", "build python3-native").dependOn(&python3_native.step);
 
     {
         const update = UpdateZigetStep.create(b);
