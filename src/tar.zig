@@ -10,14 +10,13 @@ const oom = common.oom;
 const fatal = common.fatal;
 
 pub fn main() !u8 {
-    const all_args = common.cmdlineArgs();
-
     var sw = struct {
         extract: bool = false,
         filename: bool = false,
     }{ };
 
     const args = blk: {
+        const all_args = common.cmdlineArgs();
         var non_option_len: usize = 0;
         for (all_args) |arg_ptr| {
             const arg = std.mem.span(arg_ptr);
@@ -26,19 +25,19 @@ pub fn main() !u8 {
                 non_option_len += 1;
             } else if (!std.mem.startsWith(u8, arg, "--")) {
                 if (arg.len == 1) {
-                    common.fatal("unknown cmdline option '-'", .{});
+                    fatal("unknown cmdline option '-'", .{});
                 }
                 for (arg[1..]) |c| {
                     switch (c) {
                         'x' => sw.extract = true,
                         'f' => sw.filename = true,
                         else => {
-                            common.fatal("unknown cmdline switch '-{c}'", .{c});
+                            fatal("unknown cmdline switch '-{c}'", .{c});
                         },
                     }
                 }
             } else {
-                common.fatal("unknown cmdline option '{s}'", .{arg});
+                fatal("unknown cmdline option '{s}'", .{arg});
             }
         }
         break :blk all_args[0 .. non_option_len];

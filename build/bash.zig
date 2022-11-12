@@ -35,11 +35,16 @@ const ConfigStep = struct {
     }
 };
 
+pub const BashNative = struct {
+    fetch: *FetchStep,
+    exe: *std.build.LibExeObjStep,
+};
+
 pub fn add(
     b: *std.build.Builder,
     ziget_native: *InstallNativeArtifactStep,
     tar_native: *InstallNativeArtifactStep,
-) *std.build.LibExeObjStep {
+) BashNative {
     const fetch = FetchStep.create(b, ziget_native, tar_native, .{
         .url = "https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz",
     });
@@ -303,8 +308,7 @@ pub fn add(
     exe.linkSystemLibraryName("termcap");
     exe.linkSystemLibraryName("dl");
 
-    //gcc -rdynamic -g -O2   -o bash
-    return exe;
+    return .{ .fetch = fetch, .exe = exe };
 }
 
 const src_names = &[_][]const u8 {

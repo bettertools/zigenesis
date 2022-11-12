@@ -49,10 +49,25 @@ pub fn build(b: *Builder) void {
     };
     b.step("tar-native", "build tar-native").dependOn(&tar_native.step);
 
+    const gnu_bash = bash.add(b, ziget_native, tar_native);
+    gnu_bash.exe.setBuildMode(native_tool_mode);
+    const gnu_bash_native = InstallNativeArtifactStep.create(gnu_bash.exe);
+    b.step("gnu-bash-native", "build bash-native").dependOn(&gnu_bash_native.step);
+
     const bash_native = blk: {
-        const exe = bash.add(b, ziget_native, tar_native);
+        const exe = b.addExecutable("bash", "src/bash.zig");
         exe.setBuildMode(native_tool_mode);
-        break :blk InstallNativeArtifactStep.create(exe);
+        exe.single_threaded = true;
+        const native_exe = InstallNativeArtifactStep.create(exe);
+
+        const run_step = std.build.RunStep.create(b, "run bash tests");
+        run_step.step.dependOn(&native_exe.step);
+        run_step.addArg(native_exe.installed_path);
+        run_step.step.dependOn(&gnu_bash.fetch.step);
+        run_step.addArg(b.pathJoin(&.{gnu_bash.fetch.extracted_path, "tests", "run-all"}));
+        b.step("bash-native-tests", "Run bash-native tests").dependOn(&run_step.step);
+
+        break :blk native_exe;
     };
     b.step("bash-native", "build bash-native").dependOn(&bash_native.step);
 
